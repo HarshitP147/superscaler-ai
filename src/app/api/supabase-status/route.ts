@@ -1,95 +1,63 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { createSupabaseServerClient } from '@/lib/supabase/server'
+import { NextResponse } from "next/server"
+import { cookies } from "next/headers"
+import { createClient } from "@/util/supabase/server"
 
-type SupabaseStatusResponse = {
-  connected: boolean
-  environment: 'local' | 'remote' | 'unknown'
-  url: string
-  projectRef?: string
-  region?: string
-  error?: string
+function detectEnvironment(url: string): 'local' | 'remote' | 'unknown' {
+  if (url.includes('127.0.0.1') || url.includes('localhost')) return 'local'
+  if (url.includes('.supabase.co')) return 'remote'
+  return 'unknown'
 }
 
-export async function GET(
-  request: NextRequest
-): Promise<NextResponse<SupabaseStatusResponse>> {
-  const response = NextResponse.next()
-  const supabase = createSupabaseServerClient(request, response)
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+function extractProjectRef(url: string): string | undefined {
+  const match = url.match(/https:\/\/([^.]+)\.supabase\.co/)
+  return match?.[1]
+}
 
-  if (!supabaseUrl) {
-    return NextResponse.json(
-      {
-        connected: false,
-        environment: 'unknown',
-        url: 'not configured',
-        error: 'NEXT_PUBLIC_SUPABASE_URL env var is not set',
-      },
-      { headers: { 'Cache-Control': 'no-store' } }
-    )
+export async function GET() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL ?? ''
+
+  if (!url) {
+    return NextResponse.json({
+      connected: false,
+      environment: 'unknown',
+      url: '',
+      error: 'NEXT_PUBLIC_SUPABASE_URL not set',
+    })
   }
 
-  let environment: 'local' | 'remote' | 'unknown' = 'unknown'
-  let displayUrl = supabaseUrl
-  let projectRef: string | undefined
-
-  if (supabaseUrl.includes('localhost') || supabaseUrl.includes('127.0.0.1')) {
-    environment = 'local'
-    displayUrl = supabaseUrl.replace(/^https?:\/\//, '')
-  } else {
-    const remoteMatch = supabaseUrl.match(/^https:\/\/([^.]+)\.supabase\.co/)
-    if (remoteMatch) {
-      environment = 'remote'
-      projectRef = remoteMatch[1]
-      const ref = projectRef
-      const truncatedRef =
-        ref.length > 16 ? ref.slice(0, 11) + '...' + ref.slice(-3) : ref
-      displayUrl = `${truncatedRef}.supabase.co`
-    } else {
-      displayUrl =
-        supabaseUrl.length > 40 ? supabaseUrl.slice(0, 37) + '...' : supabaseUrl
-    }
-  }
-
-  const region = process.env.NEXT_PUBLIC_SUPABASE_REGION
-
-  // Refresh session via server client (cookie sync happens automatically)
-  await supabase.auth.getUser()
-
-  // Build response payload
-  const buildResponse = (
-    connected: boolean,
-    error?: string
-  ): SupabaseStatusResponse => ({
-    connected,
-    environment,
-    url: displayUrl,
-    ...(projectRef && { projectRef }),
-    ...(region && { region }),
-    ...(error && { error }),
-  })
+  const cookieStore = await cookies()
+  const supabase = createClient(cookieStore)
+  const environment = detectEnvironment(url)
+  const projectRef = extractProjectRef(url)
 
   try {
-    const healthRes = await fetch(`${supabaseUrl}/rest/v1/`, {
-      next: { revalidate: 0 },
-    })
+    const { error } = await supabase.auth.getUser()
 
-    if (!healthRes.ok) {
-      const payload = buildResponse(
-        false,
-        `Health endpoint returned HTTP ${healthRes.status}`
-      )
-      response.headers.set('Cache-Control', 'no-store')
-      return NextResponse.json(payload, { status: 200, headers: response.headers })
+    // network/config errors have a status < 200 or message about fetch failure
+    if (error && error.message?.toLowerCase().includes('fetch')) {
+      return NextResponse.json({
+        connected: false,
+        environment,
+        url,
+        projectRef,
+        error: error.message,
+      })
     }
 
-    const payload = buildResponse(true)
-    response.headers.set('Cache-Control', 'no-store')
-    return NextResponse.json(payload, { status: 200, headers: response.headers })
+    return NextResponse.json({
+      connected: true,
+      environment,
+      url,
+      projectRef,
+    })
   } catch (err) {
-    const message = err instanceof Error ? err.message : 'Unknown network error'
-    const payload = buildResponse(false, message)
-    response.headers.set('Cache-Control', 'no-store')
-    return NextResponse.json(payload, { status: 200, headers: response.headers })
+    const message = err instanceof Error ? err.message : 'Unknown error'
+    return NextResponse.json({
+      connected: false,
+      environment,
+      url,
+      projectRef,
+      error: message,
+    })
   }
 }
