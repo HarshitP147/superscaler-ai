@@ -43,7 +43,7 @@ Theme applied via `data-theme` attribute on `<html>`. Persisted in `localStorage
 |---|---|
 | `src/app/globals.css` | Theme definitions (OKLCH tokens, radius, border, depth, noise) |
 | `src/components/ThemeProvider.tsx` | Reads `localStorage` on mount, sets `data-theme` on `<html>` |
-| `src/components/ThemeSwitcher.tsx` | Dropdown UI — lists all themes, applies on select |
+| `src/ui/ThemeToggle.tsx` | Single-row swap inside `UserMenu`. Uses `useSyncExternalStore` over `localStorage` + custom `superscaler:theme-change` event — no setState-in-effect, hydration-safe. |
 
 ---
 
@@ -105,4 +105,4 @@ nightgrass uses larger radius (rounder). pastelfish is more angular.
      ...
    }
    ```
-3. Add to `THEMES` const and `ICONS` map in `src/components/ThemeSwitcher.tsx`
+3. Add to `THEMES` const, `ICONS` map, and `LABEL` map in `src/ui/ThemeToggle.tsx`. Note: `ThemeToggle` is a binary swap — wiring a 3rd theme requires turning it back into a list/dropdown.

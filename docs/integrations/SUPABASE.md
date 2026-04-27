@@ -1,73 +1,116 @@
 # Supabase Integration
 
-This project uses Supabase for auth, database, and blob storage via the `@supabase/ssr` package.
+Supabase powers auth, database, and blob storage via `@supabase/ssr`.
 
 ---
 
-## Client Setup — `src/util/supabase/client.ts`
+## Env vars
 
-Browser client singleton using `createBrowserClient`. Module-level memoized — no manual `useMemo` needed.
+Two separate files. **Don't confuse them.**
 
-Required env vars:
-```
-NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:54321       # local
-NEXT_PUBLIC_SUPABASE_ANON_KEY=<anon-key>
-```
+| File | Read by | Purpose |
+|---|---|---|
+| `.env` (project root) | Next.js (build + runtime) | `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` |
+| `supabase/.env` | Supabase CLI (`env(...)` substitution in `config.toml`) | OAuth client IDs/secrets — e.g. `SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID` |
 
-Throws at call time (not build time) if env vars are missing.
+**Gotcha:** `env(VAR)` in `supabase/config.toml` only resolves against the Supabase CLI process env. Putting OAuth secrets in project-root `.env` does **not** work — they must be in `supabase/.env`. After editing `supabase/.env`, restart: `supabase stop && supabase start`.
+
+Keys in container: inspect with `docker exec supabase_auth_superscaler printenv | grep GOTRUE_EXTERNAL`.
 
 ---
 
-## Server Setup — `src/util/supabase/server.ts`
+## Clients
 
-Server client factory using `createServerClient`. Takes `cookies()` from `next/headers`. Handles cookie sync for session refresh automatically.
+| File | Use |
+|---|---|
+| `src/util/supabase/client.ts` | Browser client (`createBrowserClient`). Module-level singleton. Use in client components. |
+| `src/util/supabase/server.ts` | Server client factory (`createServerClient`). Pass `await cookies()`. Use in Server Components, Server Actions, Route Handlers. |
+| `src/util/supabase/proxy.ts` | `updateSession(request)` — request-scoped server client for Next.js Proxy. Calls `supabase.auth.getClaims()` to refresh tokens. |
 
-Use in Route Handlers and Server Components:
-```ts
-const cookieStore = await cookies()
-const supabase = createClient(cookieStore)
+---
+
+## Proxy (Next.js 16)
+
+Next.js 16 renamed `middleware.ts` → **`proxy.ts`**. Lives at project root.
+
+`proxy.ts` calls `updateSession(request)`. **Do not run code between** `createServerClient` and `getClaims()` — auth-token refresh is silent and any hiccup logs users out randomly.
+
+Matcher excludes static assets:
 ```
+/((?!_next/static|_next/image|favicon.ico|.*\.(?:svg|png|jpg|jpeg|gif|webp)$).*)
+```
+
+---
+
+## Auth — Google OAuth (PKCE)
+
+`@supabase/ssr` defaults to PKCE flow.
+
+### Flow
+
+1. Browser calls `supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: <origin>/auth/callback } })`.
+2. Google redirects to `/auth/callback?code=...`.
+3. `src/app/auth/callback/route.ts` runs `supabase.auth.exchangeCodeForSession(code)` → cookies set → redirect to `next ?? '/'`.
+4. `proxy.ts` refreshes session on every request via `getClaims()`.
+5. Server Components read user with `await supabase.auth.getUser()`.
+
+### Logout
+
+`<form action="/auth/signout" method="post">` → `src/app/auth/signout/route.ts` → `supabase.auth.signOut()` → 303 redirect to `/`.
+
+### `getClaims()` vs `getUser()`
+
+| Call | Validates | Returns | Use for |
+|---|---|---|---|
+| `getClaims()` | JWT signature locally | Claims (sub, email, exp…). **No** `user_metadata`. | Proxy token refresh, route guarding |
+| `getUser()` | Round-trip to Auth server | Full `User` (incl. `user_metadata.avatar_url`, `full_name`) | Layout / page rendering needing profile data |
+
+`getClaims()` is faster but lacks Google profile fields.
+
+### Local Google OAuth setup
+
+1. Google Cloud Console → APIs & Services → Credentials → OAuth 2.0 client (Web application).
+2. Authorized redirect URI: `http://localhost:54321/auth/v1/callback` (matches `GOTRUE_EXTERNAL_GOOGLE_REDIRECT_URI`).
+3. Paste client ID + secret into `supabase/.env`.
+4. `supabase/config.toml` has `[auth.external.google]` with `enabled = true`, `client_id = "env(SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID)"`, `secret = "env(...)"`, `skip_nonce_check = true` (required for local).
+5. Restart Supabase.
+
+### Auth routes
+
+| Route | Method | Role |
+|---|---|---|
+| `/auth/callback` | GET | Exchange OAuth code for session. Redirects to `next ?? '/'`. On error: `/?auth_error=...`. |
+| `/auth/signout` | POST | Clear session. Redirect 303 → `/`. |
 
 ---
 
 ## Status API — `GET /api/supabase-status`
 
-Health check endpoint. Calls `supabase.auth.getUser()` to verify connectivity (no session required).
+Health check. Calls `supabase.auth.getUser()` to verify connectivity (no session required).
 
-Response shape:
+Response:
 ```ts
 {
   connected: boolean
   environment: 'local' | 'remote' | 'unknown'
   url: string
-  projectRef?: string   // remote only — extracted from *.supabase.co URL
+  projectRef?: string
   error?: string
 }
 ```
 
-Environment detection:
-- `local` → URL contains `127.0.0.1` or `localhost`
-- `remote` → URL contains `.supabase.co`
-
 ---
 
-## SupabaseStatus Component — `src/components/SupabaseStatus.tsx`
-
-Client component. Fetches `/api/supabase-status` on mount. Three visual states:
-- **Yellow pulsing** → checking
-- **Green pulsing** → connected
-- **Red** → failed (shows error message)
-
----
-
-## Running Supabase Locally
+## Running Supabase locally
 
 ```bash
-supabase start      # starts on localhost:54321
-supabase status     # shows project URL + anon key
+supabase start
+supabase status
 supabase stop
 ```
 
+Studio: `http://127.0.0.1:54323`. Mailpit: `http://127.0.0.1:54324`.
+
 ## Remote
 
-Use `https://{ref}.supabase.co` as `NEXT_PUBLIC_SUPABASE_URL`. Get anon key from Supabase dashboard → Project Settings → API.
+Use `https://{ref}.supabase.co` as `NEXT_PUBLIC_SUPABASE_URL`. Anon/publishable key from Supabase dashboard → Project Settings → API.

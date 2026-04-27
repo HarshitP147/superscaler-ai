@@ -1,14 +1,14 @@
-import { ThemeSwitcher } from "@/components/ThemeSwitcher";
-import { SupabaseStatus } from "@/components/SupabaseStatus";
+import { cookies } from 'next/headers'
+import { Hero } from '@/sections/Hero'
+import { UploadPlaceholder } from '@/sections/UploadPlaceholder'
+import { createClient } from '@/util/supabase/server'
 
-export default function Home() {
-  return (
-    <div className="flex items-center justify-center min-h-screen w-full">
-      <div className="text-center">
-        <h1 className="text-4xl font-bold mb-8">Theme Switcher</h1>
-        <ThemeSwitcher />
-        <SupabaseStatus />
-      </div>
-    </div>
-  );
+export default async function Home() {
+  const cookieStore = await cookies()
+  const supabase = createClient(cookieStore)
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  return user ? <UploadPlaceholder /> : <Hero />
 }
