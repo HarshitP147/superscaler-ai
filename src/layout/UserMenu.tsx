@@ -1,7 +1,5 @@
 'use client'
 
-import { ThemeToggle } from '@/ui/ThemeToggle'
-
 type UserMenuProps = {
   avatarUrl: string | null
   initial: string
@@ -33,9 +31,8 @@ export function UserMenu({ avatarUrl, initial, displayName }: UserMenuProps) {
       </button>
       <div
         tabIndex={0}
-        className="dropdown-content menu bg-base-200 border border-base-300 rounded-box z-10 w-64 p-3 shadow-lg mt-2 gap-3"
+        className="dropdown-content menu bg-base-200 border border-base-300 rounded-box z-10 w-64 p-3 shadow-lg mt-2"
       >
-        <ThemeToggle />
         <form action="/auth/signout" method="post" className="contents">
           <button
             type="submit"

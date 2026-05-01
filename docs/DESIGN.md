@@ -27,31 +27,23 @@ Both fonts loaded via `next/font/google` in `src/app/layout.tsx`. Available as C
 
 ## Theming
 
-Configured in `src/app/globals.css` using DaisyUI v5 plugin syntax.  
-Theme applied via `data-theme` attribute on `<html>`. Persisted in `localStorage` key `"theme"`.
+Single dark theme: **nightgrass**. No theme toggle, no `localStorage`.
+`data-theme="nightgrass"` is hardcoded on `<html>` in `src/app/layout.tsx`.
 
-### Available Themes
-
-| Name | Scheme | Default | Notes |
-|---|---|---|---|
-| `nightgrass` | dark | ✅ | Deep dark + green primary |
-| `pastelfish` | light | — | Near-white base + blue-toned neutrals |
+Defined in `src/app/globals.css` via DaisyUI v5 plugin syntax.
 
 ### Theme Implementation Files
 
 | File | Role |
 |---|---|
-| `src/app/globals.css` | Theme definitions (OKLCH tokens, radius, border, depth, noise) |
-| `src/components/ThemeProvider.tsx` | Reads `localStorage` on mount, sets `data-theme` on `<html>` |
-| `src/ui/ThemeToggle.tsx` | Single-row swap inside `UserMenu`. Uses `useSyncExternalStore` over `localStorage` + custom `superscaler:theme-change` event — no setState-in-effect, hydration-safe. |
+| `src/app/globals.css` | Theme definition (OKLCH tokens, radius, border, depth, noise) |
+| `src/app/layout.tsx` | Sets `data-theme="nightgrass"` on `<html>` |
 
 ---
 
-## Color Tokens (OKLCH)
+## Color Tokens (OKLCH) — nightgrass
 
 All colors use OKLCH color space. Semantic tokens follow DaisyUI conventions.
-
-### nightgrass
 
 | Token | Value | Role |
 |---|---|---|
@@ -63,46 +55,15 @@ All colors use OKLCH color space. Semantic tokens follow DaisyUI conventions.
 | `--color-accent` | `oklch(44% 0.043 257.281)` | Muted blue |
 | `--color-neutral` | `oklch(44% 0.011 73.639)` | Neutral surfaces |
 
-### pastelfish
-
-| Token | Value | Role |
-|---|---|---|
-| `--color-base-100` | `oklch(98% 0.002 247.839)` | Page background (near white) |
-| `--color-base-200` | `oklch(96% 0.003 264.542)` | Card / elevated surfaces |
-| `--color-base-content` | `oklch(21% 0.034 264.665)` | Body text (dark) |
-| `--color-primary` | `oklch(64% 0.2 131.684)` | Green — matches nightgrass primary |
-| `--color-accent` | `oklch(68% 0.162 75.834)` | Warm amber |
-
 ---
 
 ## Shape & Spacing Tokens
 
-| Token | nightgrass | pastelfish | Role |
-|---|---|---|---|
-| `--radius-selector` | `0.5rem` | `0.25rem` | Buttons, badges |
-| `--radius-field` | `1rem` | `1rem` | Inputs, fields |
-| `--radius-box` | `2rem` | `0.5rem` | Cards, containers |
-| `--border` | `1px` | `1px` | Border width |
-| `--depth` | `0` | `1` | Shadow depth layer |
-| `--noise` | `0` | `0` | Texture noise |
-
-nightgrass uses larger radius (rounder). pastelfish is more angular.
-
----
-
-## Adding a New Theme
-
-1. Add to DaisyUI plugin list in `globals.css`:
-   ```css
-   @plugin "daisyui" {
-     themes: nightgrass --default, pastelfish, <newtheme>;
-   }
-   ```
-2. Define token block in `globals.css`:
-   ```css
-   @plugin "daisyui/theme" {
-     name: "<newtheme>";
-     ...
-   }
-   ```
-3. Add to `THEMES` const, `ICONS` map, and `LABEL` map in `src/ui/ThemeToggle.tsx`. Note: `ThemeToggle` is a binary swap — wiring a 3rd theme requires turning it back into a list/dropdown.
+| Token | Value | Role |
+|---|---|---|
+| `--radius-selector` | `0.5rem` | Buttons, badges |
+| `--radius-field` | `1rem` | Inputs, fields |
+| `--radius-box` | `2rem` | Cards, containers |
+| `--border` | `1px` | Border width |
+| `--depth` | `0` | Shadow depth layer |
+| `--noise` | `0` | Texture noise |

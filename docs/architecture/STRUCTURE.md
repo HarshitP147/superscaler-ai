@@ -5,14 +5,14 @@ Sibling top-level dirs under `src/`. Each has a single role.
 ```
 src/
   app/             Routes (Next.js App Router) — pages, layouts, route handlers
-  components/      Generic atoms with no clear home (e.g. ThemeProvider, SupabaseStatus)
+  components/      Generic atoms with no clear home (e.g. SupabaseStatus)
   sections/        Large page sections — render a chunk of a route's content
   layout/          Page chrome — header, navigation, account menu
-  ui/              Small reusable widgets — toggles, badges, atoms with shared use
+  ui/              Small reusable widgets — badges, atoms with shared use (currently empty)
   util/            Non-React utilities (Supabase client factories, helpers)
 ```
 
-`tsconfig.json` maps `@/*` → `./src/*`. Import like `@/sections/Hero`, `@/layout/AppHeader`, `@/ui/ThemeToggle`.
+`tsconfig.json` maps `@/*` → `./src/*`. Import like `@/sections/Hero`, `@/layout/AppHeader`.
 
 ---
 
@@ -23,8 +23,8 @@ src/
 | A route, layout, or route handler | `src/app/<route>/...` |
 | A "main content" block of a page (Hero, Upload, Pricing, Footer-as-section) | `src/sections/` |
 | Header / sidebar / account menu — anything wrapping content | `src/layout/` |
-| Reusable widget shared across sections (ThemeToggle, IconButton) | `src/ui/` |
-| Stateful provider with no UI of its own (ThemeProvider) | `src/components/` |
+| Reusable widget shared across sections (IconButton, Badge) | `src/ui/` |
+| Stateful provider with no UI of its own | `src/components/` |
 | Plain TS helpers (Supabase clients, formatters) | `src/util/` |
 
 Top-level `proxy.ts` is the only Next.js convention file outside `src/` — required by Next.js 16 to live alongside `app/` (or `pages/`).
@@ -52,4 +52,4 @@ Top-level `proxy.ts` is the only Next.js convention file outside `src/` — requ
 | `src/sections/Hero.tsx` | Unauthed `/` — `signInWithOAuth` button |
 | `src/sections/UploadPlaceholder.tsx` | Authed `/` — upload UI placeholder |
 | `src/layout/AppHeader.tsx` | Top-right header, renders only when user truthy |
-| `src/layout/UserMenu.tsx` | Avatar dropdown — theme + logout |
+| `src/layout/UserMenu.tsx` | Avatar dropdown — logout |

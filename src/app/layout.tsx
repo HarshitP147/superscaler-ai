@@ -2,7 +2,6 @@ import type { Metadata } from 'next'
 import { Geist, Geist_Mono } from 'next/font/google'
 import { cookies } from 'next/headers'
 import './globals.css'
-import { ThemeProvider } from '@/components/ThemeProvider'
 import { AppHeader } from '@/layout/AppHeader'
 import { createClient } from '@/util/supabase/server'
 
@@ -35,13 +34,12 @@ export default async function RootLayout({
   return (
     <html
       lang="en"
+      data-theme="nightgrass"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
-        <ThemeProvider>
-          <AppHeader user={user} />
-          {children}
-        </ThemeProvider>
+        <AppHeader user={user} />
+        {children}
       </body>
     </html>
   )
