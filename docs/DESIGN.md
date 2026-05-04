@@ -67,3 +67,15 @@ All colors use OKLCH color space. Semantic tokens follow DaisyUI conventions.
 | `--border` | `1px` | Border width |
 | `--depth` | `0` | Shadow depth layer |
 | `--noise` | `0` | Texture noise |
+
+---
+
+## Current UI Patterns
+
+- Settings uses a clean left-rail / right-pane layout under `/settings`.
+- Keep the settings shell unboxed: preserve generous page padding, but avoid wrapping the whole settings surface in a bordered card.
+- The credits view is intentionally flatter than the first dashboard iteration:
+  - page-level headings and dividers
+  - inline action feedback rather than URL-driven notices
+  - simple divided activity rows instead of nested cards
+- Credits and header balance should always reflect the same persisted server-side balance.

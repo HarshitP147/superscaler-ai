@@ -38,6 +38,7 @@ Top-level `proxy.ts` is the only Next.js convention file outside `src/` — requ
 - `layout.tsx` and `page.tsx` are server components — use `await cookies()` + `createClient()` + `supabase.auth.getUser()` to read auth.
 
 `AppHeader` is a server component that receives `user` prop. The interactive `UserMenu` inside it is `'use client'`.
+`SettingsShell` is a client component because the active settings item is derived from `usePathname()`. `CreditsDashboard` is also client-side because it uses `useActionState()` and controlled inputs for the credits form.
 
 ---
 
@@ -52,4 +53,29 @@ Top-level `proxy.ts` is the only Next.js convention file outside `src/` — requ
 | `src/sections/Hero.tsx` | Unauthed `/` — `signInWithOAuth` button |
 | `src/sections/UploadPlaceholder.tsx` | Authed `/` — upload UI placeholder |
 | `src/layout/AppHeader.tsx` | Top-right header, renders only when user truthy |
-| `src/layout/UserMenu.tsx` | Avatar dropdown — logout |
+| `src/layout/UserMenu.tsx` | Avatar dropdown — settings entry + logout |
+
+---
+
+## Settings-related files
+
+| File | Role |
+|---|---|
+| `src/layout/SettingsShell.tsx` | Shared left-rail / right-pane settings shell |
+| `src/app/settings/layout.tsx` | Auth-gated wrapper for `/settings/*` |
+| `src/app/settings/page.tsx` | Default App settings route |
+| `src/app/settings/credits/page.tsx` | Credits settings route |
+| `src/app/settings/credits/actions.ts` | Server action for manual credit top-ups |
+| `src/sections/AppSettingsPanel.tsx` | Right-pane App settings content |
+| `src/sections/CreditsDashboard.tsx` | Right-pane credits UI |
+| `src/app/credits/page.tsx` | Legacy redirect to `/settings/credits` |
+
+---
+
+## Credits-related helpers
+
+| File | Role |
+|---|---|
+| `src/util/credits.ts` | Shared credit validation, formatting, balance fetch, activity fetch |
+
+Credits form feedback is kept in-page through `useActionState()` and does not mutate the URL.

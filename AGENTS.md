@@ -30,6 +30,8 @@ For DaisyUI docs use Context7 MCP: `/websites/daisyui`
 ## Quick facts
 
 - Auth: Google OAuth via Supabase, PKCE flow. Routes: `/auth/callback` (GET), `/auth/signout` (POST).
+- Settings area: `/settings` is the authenticated settings shell. `/settings` defaults to the `App` pane and `/settings/credits` is the credits settings pane. Legacy `/credits` redirects to `/settings/credits`.
+- Credits: stored in Supabase Postgres via `user_credit_balances`, `credit_activity`, and RPC `apply_manual_credit_topup`. The top header balance and credits settings screen read from the same source of truth.
 - Session refresh: `proxy.ts` (root) → `src/util/supabase/proxy.ts::updateSession` → `getClaims()`.
 - User profile (avatar, name): `getUser()` in Server Components. `getClaims()` does **not** include `user_metadata`.
 - Env-var gotcha: OAuth secrets go in `supabase/.env` (read by Supabase CLI), **not** project-root `.env` (read by Next.js).
