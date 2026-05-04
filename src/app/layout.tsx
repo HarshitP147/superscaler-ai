@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from 'next/font/google'
 import { cookies } from 'next/headers'
 import './globals.css'
 import { AppHeader } from '@/layout/AppHeader'
+import { ThemeProvider } from '@/context/ThemeContext'
 import { createClient } from '@/util/supabase/server'
 import { getUserCreditBalance } from '@/util/credits'
 
@@ -40,8 +41,10 @@ export default async function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
-        <AppHeader user={user} credits={credits} />
-        {children}
+        <ThemeProvider>
+          <AppHeader user={user} credits={credits} />
+          {children}
+        </ThemeProvider>
       </body>
     </html>
   )
