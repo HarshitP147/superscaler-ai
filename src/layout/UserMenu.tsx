@@ -1,5 +1,7 @@
 'use client'
 
+import Link from 'next/link'
+
 type UserMenuProps = {
   avatarUrl: string | null
   initial: string
@@ -31,12 +33,18 @@ export function UserMenu({ avatarUrl, initial, displayName }: UserMenuProps) {
       </button>
       <div
         tabIndex={0}
-        className="dropdown-content menu bg-base-200 border border-base-300 rounded-box z-10 w-64 p-3 shadow-lg mt-2"
+        className="dropdown-content bg-base-200 border border-base-300 rounded-box z-10 w-56 p-2 shadow-lg mt-2 flex flex-col gap-1"
       >
+        <Link
+          href="/settings"
+          className="btn btn-block btn-sm btn-ghost justify-start border-0 font-normal"
+        >
+          Settings
+        </Link>
         <form action="/auth/signout" method="post" className="contents">
           <button
             type="submit"
-            className="btn btn-block btn-sm justify-center bg-transparent border-error text-error hover:bg-error hover:text-error-content transition-colors duration-200"
+            className="btn btn-block btn-sm justify-start border-0 bg-transparent text-error hover:bg-error hover:text-error-content transition-colors duration-200 font-normal"
           >
             Logout
           </button>
