@@ -23,17 +23,17 @@ For DaisyUI docs use Context7 MCP: `/websites/daisyui`
 | System architecture, data flow, infra | `docs/architecture/ARCH.md` |
 | Project structure, where new files go, server-vs-client | `docs/architecture/STRUCTURE.md` |
 | Supabase clients, env vars (incl. `supabase/.env` gotcha), proxy, auth flow, Google OAuth, signout, status API | `docs/integrations/SUPABASE.md` |
-| Design system, colors, theme tokens | `docs/DESIGN.md` |
+| Design system, colors, theme tokens, theme switching, ThemeContext | `docs/DESIGN.md` |
 
 ---
 
 ## Quick facts
 
 - Auth: Google OAuth via Supabase, PKCE flow. Routes: `/auth/callback` (GET), `/auth/signout` (POST).
-- Settings area: `/settings` is the authenticated settings shell. `/settings` defaults to the `App` pane and `/settings/credits` is the credits settings pane. Legacy `/credits` redirects to `/settings/credits`.
+- Settings area: `/settings` is authenticated settings shell with left-rail navigation. App pane includes theme switcher dropdown. Use `useTheme()` hook to access theme state in components.
 - Credits: stored in Supabase Postgres via `user_credit_balances`, `credit_activity`, and RPC `apply_manual_credit_topup`. The top header balance and credits settings screen read from the same source of truth.
 - Session refresh: `proxy.ts` (root) → `src/util/supabase/proxy.ts::updateSession` → `getClaims()`.
 - User profile (avatar, name): `getUser()` in Server Components. `getClaims()` does **not** include `user_metadata`.
 - Env-var gotcha: OAuth secrets go in `supabase/.env` (read by Supabase CLI), **not** project-root `.env` (read by Next.js).
-- Theme: single dark theme `nightgrass`. Hardcoded as `data-theme` on `<html>` in `src/app/layout.tsx`. No toggle, no `localStorage`.
+- Theme: three DaisyUI themes (nightgrass, forest, dark). Dynamic switching via `ThemeContext` → useTheme hook. Persists to `localStorage` and updates `data-theme` on `<html>`. Settings > App tab has theme dropdown. Server-side default `data-theme="nightgrass"` prevents SSR flash.
 - Folder layout: `src/{app,components,sections,layout,ui,util}/` as siblings. See `docs/architecture/STRUCTURE.md`.

@@ -27,17 +27,25 @@ Both fonts loaded via `next/font/google` in `src/app/layout.tsx`. Available as C
 
 ## Theming
 
-Single dark theme: **nightgrass**. No theme toggle, no `localStorage`.
-`data-theme="nightgrass"` is hardcoded on `<html>` in `src/app/layout.tsx`.
+Three DaisyUI themes available: **nightgrass** (default, dark), **forest**, **dark**.
 
-Defined in `src/app/globals.css` via DaisyUI v5 plugin syntax.
+Theme switching enabled via `ThemeContext` — persists selection to `localStorage` under key `"theme"` and updates `data-theme` attribute on `<html>` dynamically.
+
+### How It Works
+
+1. **ThemeContext** (`src/context/ThemeContext.tsx`): Client-side hook that manages theme state + localStorage persistence
+2. **ThemeProvider** (`src/app/layout.tsx`): Wraps app, reads stored theme on mount, applies to DOM
+3. **useTheme hook**: Consumed by UI components to get/set theme (e.g., AppSettingsPanel theme dropdown)
+4. **Initial render**: Server-side `data-theme="nightgrass"` on `<html>` prevents flash; client-side hydration overrides with stored preference
 
 ### Theme Implementation Files
 
 | File | Role |
 |---|---|
-| `src/app/globals.css` | Theme definition (OKLCH tokens, radius, border, depth, noise) |
-| `src/app/layout.tsx` | Sets `data-theme="nightgrass"` on `<html>` |
+| `src/app/globals.css` | Theme definitions: nightgrass, forest, dark (DaisyUI v5 plugin syntax, OKLCH tokens) |
+| `src/context/ThemeContext.tsx` | React context + useTheme hook. Reads/writes localStorage, updates DOM data-theme |
+| `src/app/layout.tsx` | ThemeProvider wraps app. Server-side default data-theme="nightgrass" for SSR |
+| `src/sections/AppSettingsPanel.tsx` | Theme dropdown UI (Settings > App tab). Uses useTheme() to get/set theme |
 
 ---
 
