@@ -1,3 +1,4 @@
+import { Suspense } from 'react'
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { CreditsDashboard } from '@/sections/CreditsDashboard'
@@ -17,5 +18,9 @@ export default async function SettingsCreditsPage() {
 
   const overview = await getCreditsOverview(supabase, user.id)
 
-  return <CreditsDashboard overview={overview} />
+  return (
+    <Suspense fallback={null}>
+      <CreditsDashboard overview={overview} />
+    </Suspense>
+  )
 }
