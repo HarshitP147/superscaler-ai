@@ -10,10 +10,14 @@ Two separate files. **Don't confuse them.**
 
 | File | Read by | Purpose |
 |---|---|---|
-| `.env` (project root) | Next.js (build + runtime) | `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` |
+| `.env.local` (project root) | Next.js (build + runtime) | `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY`, Stripe keys |
 | `supabase/.env` | Supabase CLI (`env(...)` substitution in `config.toml`) | OAuth client IDs/secrets — e.g. `SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID` |
 
-**Gotcha:** `env(VAR)` in `supabase/config.toml` only resolves against the Supabase CLI process env. Putting OAuth secrets in project-root `.env` does **not** work — they must be in `supabase/.env`. After editing `supabase/.env`, restart: `supabase stop && supabase start`.
+**Gotcha:** `env(VAR)` in `supabase/config.toml` only resolves against the Supabase CLI process env. Putting OAuth secrets in project-root `.env.local` does **not** work — they must be in `supabase/.env`. After editing `supabase/.env`, restart: `supabase stop && supabase start`.
+
+**Naming:** the codebase uses Supabase's new key naming (`sb_publishable_*` / `sb_secret_*`). For the local stack, both keys come from `supabase status`. Do **not** reintroduce the legacy `SUPABASE_SERVICE_ROLE_KEY` name.
+
+**Local-only by default:** never run `supabase db push`. Apply migrations with `supabase migration up`. The remote DB stays untouched until the user explicitly approves a push (this is a hard project rule, see `MEMORY.md` in the agent memory store).
 
 Keys in container: inspect with `docker exec supabase_auth_superscaler printenv | grep GOTRUE_EXTERNAL`.
 
@@ -26,6 +30,7 @@ Keys in container: inspect with `docker exec supabase_auth_superscaler printenv 
 | `src/util/supabase/client.ts` | Browser client (`createBrowserClient`). Module-level singleton. Use in client components. |
 | `src/util/supabase/server.ts` | Server client factory (`createServerClient`). Pass `await cookies()`. Use in Server Components, Server Actions, Route Handlers. |
 | `src/util/supabase/proxy.ts` | `updateSession(request)` — request-scoped server client for Next.js Proxy. Calls `supabase.auth.getClaims()` to refresh tokens. |
+| `src/util/supabase/service.ts` | Service-role client (`SUPABASE_SECRET_KEY`, no cookies). Webhook-only. Bypasses RLS. See `docs/integrations/STRIPE.md`. |
 
 ---
 

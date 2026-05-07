@@ -84,6 +84,8 @@ All colors use OKLCH color space. Semantic tokens follow DaisyUI conventions.
 - Keep the settings shell unboxed: preserve generous page padding, but avoid wrapping the whole settings surface in a bordered card.
 - The credits view is intentionally flatter than the first dashboard iteration:
   - page-level headings and dividers
-  - inline action feedback rather than URL-driven notices
+  - inline action feedback for action errors / pending states
+  - a single thin success banner above the balance for completed Stripe top-ups; it auto-dismisses ~4s after `onComplete` so the post-refresh balance is the only thing left on screen
   - simple divided activity rows instead of nested cards
+- The Stripe Embedded Checkout iframe replaces the input row in place when active, so "Recent activity" pushes down naturally — no overlay, no modal.
 - Credits and header balance should always reflect the same persisted server-side balance.
