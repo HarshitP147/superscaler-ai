@@ -1,40 +1,17 @@
 'use client'
 
 import { useEffect, useRef, useState, useTransition, type ChangeEvent, type DragEvent } from 'react'
-import { Film, ImageIcon, Loader2, Upload, X } from 'lucide-react'
-import { upscaleAction, type UpscaleError } from '@/app/actions/upscale'
-import { getUpscaleJob, type UpscaleJobStatus } from '@/app/actions/getUpscaleJob'
+import { Film, ImageIcon, Upload, X } from 'lucide-react'
+import { upscaleAction } from '@/app/actions/upscale'
 
 const RESOLUTIONS = ['1080p', '2K', '4K'] as const
 const MAX_BYTES = 100 * 1024 * 1024
 const ACCEPT = 'image/*,video/*'
-const POLL_MS = 2000
-
-const ERROR_MESSAGES: Record<UpscaleError, string> = {
-  unauthorized: 'You must be signed in.',
-  missing_file: 'Pick a file first.',
-  invalid_resolution: 'Pick a target resolution.',
-  unsupported_mime: 'Only PNG, JPEG, or WebP images are supported.',
-  cannot_read_image: 'Could not read this image.',
-  source_already_exceeds_target: 'Source image is already at or above the target resolution.',
-  no_credits: 'Not enough credits. Top up to keep upscaling.',
-  webhook_base_url_missing: 'Server is missing WEBHOOK_BASE_URL.',
-  storage_upload_failed: 'Upload to storage failed.',
-  provider_submit_failed: 'Could not reach the upscaler service.',
-  unknown_error: 'Something went wrong.',
-}
 
 function formatBytes(bytes: number) {
   if (bytes < 1024) return `${bytes} B`
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
-}
-
-type JobState = {
-  id: string
-  status: UpscaleJobStatus
-  outputUrl: string | null
-  error: string | null
 }
 
 export function UploadPlaceholder() {
@@ -44,40 +21,12 @@ export function UploadPlaceholder() {
   const [resolutionIdx, setResolutionIdx] = useState(2)
   const [dragActive, setDragActive] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [job, setJob] = useState<JobState | null>(null)
   const [isPending, startTransition] = useTransition()
 
   useEffect(() => {
     if (!previewUrl) return
     return () => URL.revokeObjectURL(previewUrl)
   }, [previewUrl])
-
-  useEffect(() => {
-    if (!job || job.status === 'completed' || job.status === 'failed' || job.status === 'refunded') {
-      return
-    }
-    let cancelled = false
-    const tick = async () => {
-      const result = await getUpscaleJob(job.id)
-      if (cancelled) return
-      if (!result.ok) {
-        setJob((prev) => (prev ? { ...prev, status: 'failed', error: 'Lost track of job.' } : prev))
-        return
-      }
-      setJob({
-        id: result.job.id,
-        status: result.job.status,
-        outputUrl: result.outputUrl,
-        error: result.job.error,
-      })
-    }
-    const interval = setInterval(tick, POLL_MS)
-    void tick()
-    return () => {
-      cancelled = true
-      clearInterval(interval)
-    }
-  }, [job])
 
   const acceptFile = (next: File) => {
     const isImage = next.type.startsWith('image/')
@@ -91,7 +40,6 @@ export function UploadPlaceholder() {
       return
     }
     setError(null)
-    setJob(null)
     setFile(next)
     setPreviewUrl(URL.createObjectURL(next))
   }
@@ -114,33 +62,23 @@ export function UploadPlaceholder() {
     setFile(null)
     setPreviewUrl(null)
     setError(null)
-    setJob(null)
   }
 
   const onUpscale = () => {
     if (!file) return
-    setError(null)
-    setJob(null)
     const fd = new FormData()
     fd.append('file', file)
     fd.append('resolution', RESOLUTIONS[resolutionIdx])
     startTransition(async () => {
       const result = await upscaleAction(fd)
       if (!result.ok) {
-        setError(ERROR_MESSAGES[result.error] ?? 'Something went wrong.')
-        return
+        setError(result.error)
       }
-      setJob({ id: result.jobId, status: 'queued', outputUrl: null, error: null })
     })
   }
 
   const isVideo = file?.type.startsWith('video/')
   const resolution = RESOLUTIONS[resolutionIdx]
-  const polling = !!job && job.status !== 'completed' && job.status !== 'failed' && job.status !== 'refunded'
-  const buttonDisabled = !file || isPending || polling
-  let buttonLabel = 'Upscale'
-  if (isPending) buttonLabel = 'Submitting…'
-  else if (polling) buttonLabel = job?.status === 'queued' ? 'Queued…' : 'Processing…'
 
   return (
     <section className="flex items-center justify-center min-h-screen w-full px-6">
@@ -235,7 +173,7 @@ export function UploadPlaceholder() {
               step={1}
               value={resolutionIdx}
               onChange={(e) => setResolutionIdx(Number(e.target.value))}
-              disabled={!file || polling}
+              disabled={!file}
               className="range range-primary range-sm flex-1"
             />
             <span className="text-sm font-mono font-semibold w-12 text-right">
@@ -248,38 +186,12 @@ export function UploadPlaceholder() {
             <button
               type="button"
               onClick={onUpscale}
-              disabled={buttonDisabled}
+              disabled={!file || isPending}
               className="btn btn-primary"
             >
-              {polling ? <Loader2 size={16} className="animate-spin" /> : null}
-              {buttonLabel}
+              {isPending ? 'Upscaling…' : 'Upscale'}
             </button>
           </div>
-
-          {job && job.status === 'completed' && job.outputUrl ? (
-            <div className="flex flex-col gap-3">
-              <p className="text-sm opacity-70">Upscaled result</p>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={job.outputUrl}
-                alt="Upscaled output"
-                className="rounded-[var(--radius-box)] max-w-full"
-              />
-              <a
-                href={job.outputUrl}
-                download
-                className="btn btn-outline btn-sm self-start"
-              >
-                Download
-              </a>
-            </div>
-          ) : null}
-
-          {job && (job.status === 'failed' || job.status === 'refunded') ? (
-            <p className="text-error text-sm">
-              Upscale failed{job.error ? `: ${job.error}` : ''}. Credits were refunded.
-            </p>
-          ) : null}
         </div>
       </div>
     </section>
