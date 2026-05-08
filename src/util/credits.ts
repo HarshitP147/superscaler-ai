@@ -20,7 +20,24 @@ type CreditActivityRow = {
   created_at: string
 }
 
-export type CreditActivityKind = 'manual_top_up' | 'stripe_payment'
+export type CreditActivityKind =
+  | 'manual_top_up'
+  | 'stripe_payment'
+  | 'upscale_charge'
+  | 'upscale_refund'
+
+const CREDIT_ACTIVITY_KINDS: readonly CreditActivityKind[] = [
+  'manual_top_up',
+  'stripe_payment',
+  'upscale_charge',
+  'upscale_refund',
+] as const
+
+function toCreditActivityKind(kind: string): CreditActivityKind {
+  return (CREDIT_ACTIVITY_KINDS as readonly string[]).includes(kind)
+    ? (kind as CreditActivityKind)
+    : 'manual_top_up'
+}
 
 export type CreditActivityItem = {
   id: string
@@ -65,6 +82,10 @@ export function formatCreditActivityKind(kind: CreditActivityItem['kind']) {
       return 'Manual top-up'
     case 'stripe_payment':
       return 'Card top-up'
+    case 'upscale_charge':
+      return 'Upscale'
+    case 'upscale_refund':
+      return 'Upscale refund'
     default:
       return kind
   }
@@ -127,7 +148,7 @@ export async function getCreditsOverview(supabase: SupabaseClient, userId: strin
     balance: toNumber(balanceResult.data?.balance),
     activity: (activityResult.data ?? []).map((item) => ({
       id: item.id,
-      kind: (item.kind === 'stripe_payment' ? 'stripe_payment' : 'manual_top_up') as CreditActivityKind,
+      kind: toCreditActivityKind(item.kind),
       amount: toNumber(item.amount),
       balanceAfter: toNumber(item.balance_after),
       createdAt: item.created_at,
