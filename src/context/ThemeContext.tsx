@@ -10,13 +10,14 @@ type ThemeContextType = {
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined)
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setThemeState] = useState('nightgrass')
+  const [theme, setThemeState] = useState(() => {
+    if (typeof window === 'undefined') return 'nightgrass'
+    return localStorage.getItem('theme') || 'nightgrass'
+  })
 
   useEffect(() => {
-    const stored = localStorage.getItem('theme') || 'nightgrass'
-    setThemeState(stored)
-    document.documentElement.setAttribute('data-theme', stored)
-  }, [])
+    document.documentElement.setAttribute('data-theme', theme)
+  }, [theme])
 
   const setTheme = (newTheme: string) => {
     setThemeState(newTheme)
