@@ -71,10 +71,9 @@ Top-level `proxy.ts` is the only Next.js convention file outside `src/` — requ
 | `src/sections/AppSettingsPanel.tsx` | Right-pane App settings content |
 | `src/sections/CreditsDashboard.tsx` | Right-pane credits UI; orchestrates Stripe Embedded Checkout |
 | `src/sections/StripeCheckout.tsx` | Thin client wrapper for `<EmbeddedCheckoutProvider>` + `<EmbeddedCheckout>` |
-| `src/app/api/stripe/webhook/route.ts` | Stripe webhook — verifies signature, calls service-role RPC |
-| `src/lib/stripe-server.ts` | `import 'server-only'` Stripe Node singleton |
+| `supabase/functions/stripe-webhook/index.ts` | Stripe webhook — **Supabase Edge Function** (Deno). Verifies signature, calls service-role RPC. (Replaced the deleted `src/app/api/stripe/webhook/route.ts` + `src/util/supabase/service.ts`.) |
+| `src/lib/stripe-server.ts` | `import 'server-only'` Stripe Node singleton (Checkout Session creation only) |
 | `src/lib/stripe-client.ts` | Cached `loadStripe()` for browser use |
-| `src/util/supabase/service.ts` | Service-role Supabase client (`SUPABASE_SECRET_KEY`) — webhook only |
 
 ---
 

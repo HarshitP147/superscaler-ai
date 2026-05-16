@@ -21,7 +21,7 @@ Paid credit top-ups go through **Stripe Embedded Checkout**. The flow:
 
 1. `/settings/credits` triggers the server action `createCheckoutSessionAction(amount)`, which creates a Stripe Checkout Session (`ui_mode: 'embedded_page'`, `mode: 'payment'`) carrying `metadata.user_id` and `metadata.amount_credits`.
 2. The client renders Stripe's `<EmbeddedCheckoutProvider>` inline using the returned `client_secret`. Stripe owns the form UI; we own the trigger and the credit grant.
-3. After payment, Stripe POSTs `checkout.session.completed` to `/api/stripe/webhook`. The route verifies the signature, extracts metadata, and calls `apply_stripe_credit_topup` via a service-role Supabase client.
+3. After payment, Stripe POSTs `checkout.session.completed` to the **Supabase Edge Function** `stripe-webhook` (`<supabase>/functions/v1/stripe-webhook`). The function (Deno) verifies the signature, extracts metadata, and calls `apply_stripe_credit_topup` via a service-role Supabase client built from auto-injected `SUPABASE_URL` / `SUPABASE_SERVICE_ROLE_KEY`. It runs next to the DB — no Vercel hop, no split env. (Originally a Next.js route; deleted.)
 4. The dashboard runs `router.refresh()` ~1.5s after `onComplete` so the user sees the updated balance and a new "Card top-up" row.
 
 See `docs/integrations/STRIPE.md` for the file inventory, env vars, idempotency model, and the local-dev workflow (Stripe CLI + local Supabase migrations).

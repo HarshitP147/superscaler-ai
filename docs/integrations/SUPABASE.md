@@ -30,7 +30,8 @@ Keys in container: inspect with `docker exec supabase_auth_superscaler printenv 
 | `src/util/supabase/client.ts` | Browser client (`createBrowserClient`). Module-level singleton. Use in client components. |
 | `src/util/supabase/server.ts` | Server client factory (`createServerClient`). Pass `await cookies()`. Use in Server Components, Server Actions, Route Handlers. |
 | `src/util/supabase/proxy.ts` | `updateSession(request)` — request-scoped server client for Next.js Proxy. Calls `supabase.auth.getClaims()` to refresh tokens. |
-| `src/util/supabase/service.ts` | Service-role client (`SUPABASE_SECRET_KEY`, no cookies). Webhook-only. Bypasses RLS. See `docs/integrations/STRIPE.md`. |
+
+Service-role access for the Stripe webhook lives in the **`stripe-webhook` Edge Function** (`supabase/functions/stripe-webhook/index.ts`), built from auto-injected `SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY`. The old `src/util/supabase/service.ts` (`SUPABASE_SECRET_KEY`) was deleted with the Next.js webhook route. See `docs/integrations/STRIPE.md`.
 
 ---
 
