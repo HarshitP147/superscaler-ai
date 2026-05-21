@@ -5,7 +5,7 @@ import { useTheme } from '@/context/ThemeContext'
 export function AppSettingsPanel() {
   const { theme, setTheme } = useTheme()
 
-  const themes = ['nightgrass', 'forest', 'dark']
+  const themes = ['nightgrass', 'lemonade']
 
   return (
     <div className="flex flex-col gap-8">

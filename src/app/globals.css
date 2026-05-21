@@ -1,6 +1,6 @@
 @import "tailwindcss";
 @plugin "daisyui" {
-  themes: nightgrass --default, forest, dark;
+  themes: nightgrass --default,  lemonade;
 }
 
 
